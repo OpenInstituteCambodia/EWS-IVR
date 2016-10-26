@@ -1,0 +1,25 @@
+{
+  "name": "TwilioMakeOutboundCall",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Keodina <keodinachey2011@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.4",
+    "vue": "^1.0.24",
+    "vue-resource": "^0.7.2",
+    "font-awesome": "font-awsome#^4.6.3",
+    "Ionicons": "ionicons#^2.0.1",
+    "bootstrap": "^3.3.6"
+  }
+}
