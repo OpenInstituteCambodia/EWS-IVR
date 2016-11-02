@@ -59,7 +59,7 @@ class RetryCall extends Command
     public function handle()
     {
         /* current time */
-        $currentTime = Carbon::now()->toTimeString();
+        $currentTime = Carbon::now('Asia/Phnom_Penh')->toTimeString();
         $recordNeedToRetryCall = $this->queueCallObject->retryCallRecords($currentTime);
         if (count($recordNeedToRetryCall) == 0) {
             return;
