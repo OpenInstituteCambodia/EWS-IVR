@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\SomlengClient;
 use App\Twilio\Repositories\CallLogs\CallLogRepositoryInterface;
 use App\Twilio\Repositories\QueueCalls\QueueCallRepositoryInterface;
 use Carbon\Carbon;
@@ -64,10 +65,10 @@ class RetryCall extends Command
             return;
         }
         // Make Call with Twilio
-        $accountSID = env('TWILIO_ACCOUNT_SID');
-        $authToken = env('TWILIO_AUTH_TOKEN');
-        $twilioNumber = env('TWILIO_NUMBER');
-        $client = new Services_Twilio($accountSID, $authToken);
+        $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+        $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
+        $number = env(env('VOICE_PLATFORM') . '_NUMBER');
+        $client = new SomlengClient($accountSid, $authToken);
 
         /* make outbound call for each number */
         foreach ($recordNeedToRetryCall as $row) {
@@ -77,11 +78,11 @@ class RetryCall extends Command
             $maxRetry = $row['max_retry'];
             $retryTime = $row['retry_time'];
             $activityId = $row['activity_id'];
-            $call = $client->account->calls->create(
-                $twilioNumber,
+            $call = $client->calls->create(
                 $phoneNumber,
-                route('ews-ivr-calling', ['sound' => $callFlowId]),
+                $number,
                 array(
+                    'url' => route('ews-ivr-calling', ['sound' => $callFlowId]),
                     'StatusCallbackEvent' => ['completed'],
                     'StatusCallback' => route('ews-call-status-check', ['retry' => $retry, 'activityId' => $activityId, 'maxRetry' => $maxRetry, 'retryTime' => $retryTime, 'callFlowId' => $callFlowId]),
                 )

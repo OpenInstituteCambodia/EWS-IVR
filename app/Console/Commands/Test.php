@@ -2,16 +2,16 @@
 
 namespace App\Console\Commands;
 
-use App\QueueCall;
+use App\SomlengClient;
 use App\Twilio\Repositories\CallLogs\CallLogRepositoryInterface;
 use App\Twilio\Repositories\QueueCalls\QueueCallRepositoryInterface;
-use App\User;
-use Carbon\Carbon;
+use Aws\S3\S3Client;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Services_Twilio;
+use League\Flysystem\AwsS3v3\AwsS3Adapter;
+use League\Flysystem\Filesystem;
+use Twilio\Exceptions\RestException;
 
 class Test extends Command
 {
@@ -52,34 +52,35 @@ class Test extends Command
      */
     public function handle()
     {
-        $comUrl = 'http://bongpheak.com/files/sounds/kh/jobs/job_10.mp3';
-        $devUrl = 'http://dev.bongpheak.com/files/sounds/kh/jobs/job_43.mp3';
-        $comUrlPiece = explode('/', $comUrl);
-        $devUrlPiece = explode('/', $devUrl);
-        Log::info($comUrlPiece);
-        Log::info($devUrlPiece);
-        /* file_put_contents(public_path('bong_pheak_resources/IVR-MONO-WAV/interaction.txt'), '');
-         Log::info(config('constants.BONG-PHEAK-API_TOKEN'));
-         Log::info(config('constants.BONG-PHEAK-STORE_SHARE_RECORD_API'));
-         Log::info(config('constants.BONG-PHEAK-STORE_APPLY_RECORD_API'));*/
-        /*Log::info(asset('bong_pheak_resources/IVR-MONO-WAV/wrong_number.wav'));
-        return null;*/
-        /* $accountSID = env('TWILIO_ACCOUNT_SID');
-         $authToken = env('TWILIO_AUTH_TOKEN');
-         $twilioNumber = env('TWILIO_NUMBER');
-         $client = new Services_Twilio($accountSID, $authToken);
-         $phone = '+85517641855';
-         $call = $client->account->calls->create(
-             $twilioNumber,
-             $phone,
-             //route('outboundCalling', ['sound' => $callFlowId]),
-             'http://8dae19c2.ngrok.io/bongPheakIVR/job-offer',
-             array(
-                 'StatusCallbackEvent' => ['completed'],
-                 'StatusCallback' => 'http://8dae19c2.ngrok.io/bongPheakIVR/status-checking'
-                 //'StatusCallback' => route('statusCheck', ['retry' => $retry, 'activityId' => $activityId, 'maxRetry' => $maxRetry, 'retryTime' => $retryTime, 'callFlowId' => $callFlowId]),
-                 //'StatusCallback' => 'http://7f39eff9.ngrok.io/api/statusChecking/' . $retry . '/' . $activityId . '/' . $maxRetry . '/' . $retryTime . '/' . $callFlowId,
-             )
-         );*/
+      /* $client = new S3Client([
+           'credentials' => [
+               'key'    => env('S3_KEY'),
+               'secret' => env('S3_SECRET')
+           ],
+           'region' => env('S3_REGION'),
+           'version' => '2006-03-01',
+       ]);
+
+        $adapter = new AwsS3Adapter($client, env('S3_BUCKET'));
+        $filesystem = new Filesystem($adapter);
+        Log::info($filesystem->read('phone_contacts/2016-11-02:09:59:33_phone_contacts.json'));*/
+
+        /*$accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+        $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
+        $number = env(env('VOICE_PLATFORM') . '_NUMBER');
+        $somlengClient = new SomlengClient($accountSid, $authToken);
+        try {
+            $call = $somlengClient->calls->create(
+                '+85586234665',
+                $number,
+                array(
+                    'url' => 'http://demo.twilio.com/docs/voice.xml',
+                    'StatusCallbackEvent' => 'completed',
+                    'StatusCallback' => 'http://1db7c3a1.ngrok.io/ewsIVR/ews-call-status-check'
+                )
+            );
+        } catch (RestException $e) {
+            Log::info($e->getMessage());
+        }*/
     }
 }

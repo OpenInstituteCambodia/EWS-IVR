@@ -15,4 +15,6 @@ return [
     'BONG-PHEAK-API_TOKEN' => 'C5hMvKeegj3l4vDhdLpgLChTucL9Xgl8tvtpKEjSdgfP433aNft0kbYlt77h',
     'BONG-PHEAK-STORE_SHARE_RECORD_API' => 'http://bongpheak.com/api/v1/storeSharedRecord',
     'BONG-PHEAK-STORE_APPLY_RECORD_API' => 'http://bongpheak.com/api/v1/storeApplyRecord',
+    'EWS-SOUND-URL' => 'https://s3-ap-southeast-1.amazonaws.com/twilio-ews-resources/sounds/',
+    'EWS-CONTACT-URL' => 'https://s3-ap-southeast-1.amazonaws.com/twilio-ews-resources/phone_contacts/',
 ];

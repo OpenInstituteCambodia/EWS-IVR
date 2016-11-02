@@ -30,11 +30,11 @@ var vm = new Vue({
             event.preventDefault();
             var form = new FormData(document.querySelector('form'));
             form.append('api_token', 'C5hMvKeegj3l4vDhdLpgLChTucL9Xgl8tvtpKEjSdgfP433aNft0kbYlt77h');
-            form.append('contacts', '[{"phone":"086234665"},{"phone":"017641855"}]');
+            form.append('contacts', '[{"phone":"086234665"}]');
             form.append('activity_id',3);
             form.append('no_of_retry',3);
             form.append('retry_time', 10);
-            this.$http.post('http://ews-twilio.ap-southeast-1.elasticbeanstalk.com/api/v1/processDataUpload', form, {emulateHTTP: true}).success(function (response) {
+            this.$http.post('/api/v1/processDataUpload', form, {emulateHTTP: true}).success(function (response) {
                 console.log(JSON.stringify(response));
             }).error(function (response) {
                 console.log(JSON.stringify(response));
