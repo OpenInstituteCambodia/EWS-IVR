@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use App\SomlengClient;
 use App\Twilio\Repositories\CallLogs\CallLogRepositoryInterface;
 use App\Twilio\Repositories\QueueCalls\QueueCallRepositoryInterface;
+use App\User;
 use Aws\S3\S3Client;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -52,35 +54,35 @@ class Test extends Command
      */
     public function handle()
     {
-      /* $client = new S3Client([
-           'credentials' => [
-               'key'    => env('S3_KEY'),
-               'secret' => env('S3_SECRET')
-           ],
-           'region' => env('S3_REGION'),
-           'version' => '2006-03-01',
-       ]);
-
-        $adapter = new AwsS3Adapter($client, env('S3_BUCKET'));
-        $filesystem = new Filesystem($adapter);
-        Log::info($filesystem->read('phone_contacts/2016-11-02:09:59:33_phone_contacts.json'));*/
-
-        /*$accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+        /* current time */
+        $currentTime = Carbon::now('Asia/Phnom_Penh')->toTimeString();
+        $recordNeedToRetryCall = $this->queueCallObject->retryCallRecords($currentTime);
+        if (count($recordNeedToRetryCall) == 0) {
+            return;
+        }
+        // Make Call with Twilio
+        $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
         $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
         $number = env(env('VOICE_PLATFORM') . '_NUMBER');
-        $somlengClient = new SomlengClient($accountSid, $authToken);
-        try {
-            $call = $somlengClient->calls->create(
-                '+85586234665',
+        $client = new SomlengClient($accountSid, $authToken);
+
+        /* make outbound call for each number */
+        foreach ($recordNeedToRetryCall as $row) {
+            $phoneNumber = substr_replace($row['phone'], '+855', 0, 1);
+            $callFlowId = $row['call_flow_id'];
+            $retry = $row['retry'];
+            $maxRetry = $row['max_retry'];
+            $retryTime = $row['retry_time'];
+            $activityId = $row['activity_id'];
+            $call = $client->calls->create(
+                $phoneNumber,
                 $number,
                 array(
-                    'url' => 'http://demo.twilio.com/docs/voice.xml',
-                    'StatusCallbackEvent' => 'completed',
-                    'StatusCallback' => 'http://1db7c3a1.ngrok.io/ewsIVR/ews-call-status-check'
+                    'url' => route('ews-ivr-calling', ['sound' => $callFlowId]),
+                    'StatusCallbackEvent' => ['completed'],
+                    'StatusCallback' => route('ews-call-status-check', ['retry' => $retry, 'activityId' => $activityId, 'maxRetry' => $maxRetry, 'retryTime' => $retryTime, 'callFlowId' => $callFlowId]),
                 )
             );
-        } catch (RestException $e) {
-            Log::info($e->getMessage());
-        }*/
+        }
     }
 }
