@@ -6,6 +6,8 @@ use App\CallFlow;
 use App\CallLog;
 use App\QueueCall;
 use App\SomlengClient;
+use App\SomlengEWS\Repositories\CallFlows\CallFlowRepositoryInterface;
+use App\SomlengEWS\Repositories\PhoneCalls\PhoneCallRepositoryInterface;
 use Aws\S3\S3Client;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,6 +22,19 @@ use Twilio\Twiml;
 
 class EwsIVRController extends Controller
 {
+    protected $callFlow;
+    protected $phoneCall;
+
+    /**
+     * EwsIVRController constructor.
+     * @param CallFlowRepositoryInterface $callFlow
+     * @param PhoneCallRepositoryInterface $phoneCall
+     */
+    public function __construct(CallFlowRepositoryInterface $callFlow,  PhoneCallRepositoryInterface $phoneCall)
+    {
+        $this->callFlow = $callFlow;
+        $this->phoneCall = $phoneCall;
+    }
 
     public function processDataUpload(Request $request)
     {
@@ -29,7 +44,7 @@ class EwsIVRController extends Controller
         $retryDifferentTime = ($request->input('retry_time')) ? $request->input('retry_time') : Config::get('constants.DEFAULT_RETRY_DIFFERENT_TIME');
         $soundFileObject = $request->file('soundFile');
 
-        $stringDateTime = str_replace(' ', ':', $stringDateTime = Carbon::now()->toDateTimeString());
+        $stringDateTime = str_replace(' ', ':', $stringDateTime = Carbon::now('Asia/Phnom_Penh')->toDateTimeString());
         $soundFilename = $stringDateTime . "_" . $request->file('soundFile')->getClientOriginalName();
         $phoneContactFileName = $stringDateTime . '_phone_contacts.json';
 
@@ -42,12 +57,8 @@ class EwsIVRController extends Controller
         // Check if we upload successfully
         if ($uploadedSound == true && $uploadedPhoneContact == true) {
             // Create resource information in CallFlow table
-            $callFlow = CallFlow::create([
-                'project_id' => 1,
-                'sound_file_path' => $soundFilename,
-                'contact_file_path' => $phoneContactFileName,
-                'date' => Carbon::now()->toDateString()
-            ]);
+           $callFlowId =  $this->callFlow->create(1, $soundFilename, $phoneContactFileName, $activityId);
+
             // Get content of contacts.json file: phone number
             // For get contents of AWS s3 private file content we must use AWS S3 Client
             $s3Client = new S3Client([
@@ -62,29 +73,10 @@ class EwsIVRController extends Controller
             $adapter = new AwsS3Adapter($s3Client, env('S3_BUCKET')); // AWS s3 Adapter for FlySystem
             $filesystem = new Filesystem($adapter);
             $contacts = json_decode($filesystem->read('phone_contacts/' . $phoneContactFileName));
-
-            // Make Call with Twilio API or Somleng API according to ENV set
-            // $host = parse_url($request->url(), PHP_URL_HOST);
-            $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
-            $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
-            $number = env(env('VOICE_PLATFORM') . '_NUMBER');
-            $client = new SomlengClient($accountSid, $authToken);
             foreach ($contacts as $contact) {
-                $phone = substr_replace($contact->phone, '+855', 0, 1);
-                // Twilio SDK make call
-                $call = $client->calls->create(
-                    $phone,
-                    $number,
-                    array(
-                        'url' => route('ews-ivr-calling', ['sound' => $callFlow->id]),
-                        'StatusCallbackEvent' => ['completed'],
-                        'StatusCallback' => route('ews-call-status-check', ['retry' => 0, 'activityId' => $activityId, 'maxRetry' => $numberOfRetry, 'retryTime' => $retryDifferentTime, 'callFlowId' => $callFlow->id]),
-                    )
-                );
+                $this->phoneCall->create($numberOfRetry, $contact->phone, 'queued', 0, Carbon::now('Asia/Phnom_Penh')->toDateTimeString(), $retryDifferentTime, $callFlowId);
             }
-            return json_encode(['success' => true]);
         }
-        return json_encode(['success' => false]);
     }
 
     /**
@@ -119,16 +111,19 @@ class EwsIVRController extends Controller
     public
     function statusChecking(Request $request)
     {
+        // 1. check request for call_sid
+        // 2. look up call_sid in outbound_calls table
+        //3. create call_log and link to outbound call
         $retry = $request->input('retry');
         $status = $request->CallStatus;
         $duration = $request->CallDuration;
         $dateTime = Carbon::now('Asia/Phnom_Penh');
         $phone = substr_replace($request->To, '0', 0, 4);
         if ($status == 'busy' || $status == 'failed' || $status == 'no-answer' || $status == 'canceled') {
-            $activityId = $request->input('amp;activityId');
-            $maxRetry = $request->input('amp;maxRetry');
-            $retryTime = $request->input('amp;retryTime');
-            $callFlowId = $request->input('amp;callFlowId');
+            $activityId = $request->input('activityId');
+            $maxRetry = $request->input('maxRetry');
+            $retryTime = $request->input('retryTime');
+            $callFlowId = $request->input('callFlowId');
             $duration = 0;
             if ($retry < $maxRetry) {
                 QueueCall::create([

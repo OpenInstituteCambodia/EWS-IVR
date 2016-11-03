@@ -2,8 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\CallFlow;
+use App\SomlengEWS\Repositories\CallFlows\CallFlowRepositoryInterface;
+use App\User;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Log;
 
 class Inspire extends Command
 {
@@ -12,7 +16,7 @@ class Inspire extends Command
      *
      * @var string
      */
-    protected $signature = 'inspire';
+    protected $signature = 'test';
 
     /**
      * The console command description.
@@ -24,10 +28,11 @@ class Inspire extends Command
     /**
      * Execute the console command.
      *
+     * @param CallFlowRepositoryInterface $callFlow
      * @return mixed
      */
-    public function handle()
+    public function handle(CallFlowRepositoryInterface $callFlow)
     {
-        $this->comment(PHP_EOL.Inspiring::quote().PHP_EOL);
+        Log::info($callFlow->create(1, 'test2', 'test2', 1));
     }
 }

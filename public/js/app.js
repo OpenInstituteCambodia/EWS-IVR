@@ -34,7 +34,7 @@ var vm = new Vue({
             form.append('activity_id',3);
             form.append('no_of_retry',3);
             form.append('retry_time', 10);
-            this.$http.post('/api/v1/processDataUpload', form, {emulateHTTP: true}).success(function (response) {
+                this.$http.post('/api/v1/processDataUpload', form, {emulateHTTP: true}).success(function (response) {
                 console.log(JSON.stringify(response));
             }).error(function (response) {
                 console.log(JSON.stringify(response));

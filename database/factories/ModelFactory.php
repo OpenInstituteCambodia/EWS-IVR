@@ -16,7 +16,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
         'name' => 'Chey Keodina',
         'email' => 'keodina@open.org.kh',
         'password' => bcrypt('password'),
-        'api_token' => str_random(60),
+        'api_token' => 'C5hMvKeegj3l4vDhdLpgLChTucL9Xgl8tvtpKEjSdgfP433aNft0kbYlt77h',
         'remember_token' => str_random(10)
     ];
 });

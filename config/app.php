@@ -156,9 +156,8 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        App\Twilio\Repositories\CallLogs\CallLogServiceProvider::class,
-        App\Twilio\Repositories\QueueCalls\QueueCallServiceProvider::class,
-
+        App\SomlengEWS\Repositories\CallFlows\CallFlowServiceProvider::class,
+        App\SomlengEWS\Repositories\PhoneCalls\PhoneCallServiceProvider::class
     ],
 
     /*

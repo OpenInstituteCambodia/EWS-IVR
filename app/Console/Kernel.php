@@ -13,8 +13,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\Test::class,
-        Commands\RetryCallCommand::class,
+        Commands\Inspire::class,
     ];
 
     /**
@@ -27,6 +26,6 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')
         //          ->hourly();
-        $schedule->command('retry:call')->everyMinute();
+       // $schedule->command('retry:call')->everyMinute();
     }
 }

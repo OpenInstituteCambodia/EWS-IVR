@@ -13,18 +13,10 @@ class ProjectsTableSeeder extends Seeder
      */
     public function run()
     {
-        $projects = [
-            [
-                'name' => 'EWS',
-                'user_id' => 1,
-                'date' => Carbon::now(),
-            ],
-            [
-                'name' => 'Bong Pheak',
-                'user_id' => 1,
-                'date' => Carbon::now(),
-            ]
-        ];
-        Project::insert($projects);
+        $project = new Project();
+        $project->name = 'EWS';
+        $project->user_id = 1;
+        $project->date = Carbon::now('Asia/Phnom_Penh')->toDateString();
+        $project->save();
     }
 }

@@ -17,8 +17,9 @@ class CreateCallFlowsTable extends Migration
             $table->integer('project_id')->unsigned();
             $table->string('sound_file_path');
             $table->string('contact_file_path');
-            $table->date('date');
+            $table->string('activity_id');
             $table->foreign('project_id')->references('id')->on('projects')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
