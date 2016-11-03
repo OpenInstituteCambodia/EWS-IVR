@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\QueueCall;
 use App\SomlengClient;
 use App\Twilio\Repositories\CallLogs\CallLogRepositoryInterface;
 use App\Twilio\Repositories\QueueCalls\QueueCallRepositoryInterface;
@@ -48,10 +49,11 @@ class RetryCallCommand extends Command
      */
     public function handle()
     {
-        $currentTime = Carbon::now('Asia/Phnom_Penh');
-        $retryRecords = $this->queueCallObject->retryCallRecords($currentTime);
+        $currentTime = Carbon::now('Asia/Phnom_Penh')->toTimeString();
+        $retryRecords = QueueCall::where('time','<=',$currentTime)->get();
         if (count($retryRecords) > 0) {
             // Make Call with Twilio PHP SDK
+            QueueCall::where('time','<=',$currentTime)->delete();
             $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
             $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
             $number = env(env('VOICE_PLATFORM') . '_NUMBER');
