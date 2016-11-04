@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\CallFlow;
 use App\CallLog;
+use App\OutboundCall;
+use App\PhoneCall;
 use App\QueueCall;
-use App\SomlengClient;
 use App\SomlengEWS\Repositories\CallFlows\CallFlowRepositoryInterface;
 use App\SomlengEWS\Repositories\PhoneCalls\PhoneCallRepositoryInterface;
 use Aws\S3\S3Client;
@@ -30,7 +30,7 @@ class EwsIVRController extends Controller
      * @param CallFlowRepositoryInterface $callFlow
      * @param PhoneCallRepositoryInterface $phoneCall
      */
-    public function __construct(CallFlowRepositoryInterface $callFlow,  PhoneCallRepositoryInterface $phoneCall)
+    public function __construct(CallFlowRepositoryInterface $callFlow, PhoneCallRepositoryInterface $phoneCall)
     {
         $this->callFlow = $callFlow;
         $this->phoneCall = $phoneCall;
@@ -57,7 +57,7 @@ class EwsIVRController extends Controller
         // Check if we upload successfully
         if ($uploadedSound == true && $uploadedPhoneContact == true) {
             // Create resource information in CallFlow table
-           $callFlowId =  $this->callFlow->create(1, $soundFilename, $phoneContactFileName, $activityId);
+            $callFlowId = $this->callFlow->create(1, $soundFilename, $phoneContactFileName, $activityId);
 
             // Get content of contacts.json file: phone number
             // For get contents of AWS s3 private file content we must use AWS S3 Client
@@ -88,13 +88,13 @@ class EwsIVRController extends Controller
     public
     function ivrCalling(Request $request)
     {
-        $sound = $request->input('sound');
-        $soundFilePath = $this->getSoundPath($sound);
+        $soundUrl = $request->input('soundUrl');
+        Log::info('Sound URL:' . $soundUrl);
         $response = new Twiml();
         $gather = $response->gather(
-            ['numDigits' => '1', 'action' => route('ews-ivr-calling', ['sound' => $sound], false), 'finishOnKey' => '*']
+            ['numDigits' => '1', 'action' => route('ews-ivr-calling', ['soundUrl' => $soundUrl], false), 'finishOnKey' => '*']
         );
-        $gather->play($soundFilePath);
+        $gather->play($soundUrl);
         return $response;
     }
 
@@ -113,8 +113,22 @@ class EwsIVRController extends Controller
     {
         // 1. check request for call_sid
         // 2. look up call_sid in outbound_calls table
-        //3. create call_log and link to outbound call
-        $retry = $request->input('retry');
+        // 3. update outbound call with request info
+        $callSid = $request->CallSid;
+        $status = $request->CallStatus;
+        $duration = $request->CallDuration;
+        OutboundCall::where('call_sid', '=', $callSid)
+            ->update(
+                [
+                    'status' => $status,
+                    'duration' => $duration
+                ]
+            );
+        // Update phone call status
+        $phoneCallId = OutboundCall::where('call_sid', '=', $callSid)->first()->phoneCall->id;
+        PhoneCall::where('id', '=', $phoneCallId)->update(['status' => $status,'last_tried_at' => Carbon::now('Asia/Phnom_Penh')->toDateTimeString()]);
+        return;
+        /*$retry = $request->input('retry');
         $status = $request->CallStatus;
         $duration = $request->CallDuration;
         $dateTime = Carbon::now('Asia/Phnom_Penh');
@@ -167,19 +181,6 @@ class EwsIVRController extends Controller
                 'Content-Length: ' . strlen($data_string))
         );
         $result = curl_exec($ch);
-        return;
-    }
-
-    /**
-     * @param $soundId
-     * @return string
-     */
-    private
-    function getSoundPath($soundId)
-    {
-        $soundFileId = $soundId;
-        $soundFilename = CallFlow::where('id', '=', $soundFileId)->first()->sound_file_path;
-        $soundFilePath = Config::get('constants.EWS-SOUND-URL') . $soundFilename;
-        return $soundFilePath;
+        return;*/
     }
 }

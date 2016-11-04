@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CallFlow extends Model
 {
-    protected $fillable = ['project_id', 'activity_id', 'sound_file_path', 'contact_file_path'];
+    protected $fillable = ['project_id', 'activity_id', 'sound_file_path', 'contact_file_path', 'retry_duration'];
 
     /**
      * Get the project that own the call_flow

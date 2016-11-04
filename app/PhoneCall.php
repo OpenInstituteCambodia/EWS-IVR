@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PhoneCall extends Model
 {
-    protected $fillable = ['max_retries', 'phone_number', 'status', 'outbound_calls_count', 'last_tried_at', 'call_flow_id', 'retry_duration'];
+    protected $fillable = ['max_retries', 'phone_number', 'status', 'outbound_calls_count', 'last_tried_at', 'call_flow_id'];
 
     /**
      * Get Call flow that own the phone call

@@ -11,5 +11,6 @@ namespace App\SomlengEWS\Repositories\PhoneCalls;
 
 interface PhoneCallRepositoryInterface
 {
-    public function create($maxRetries, $phoneNumber, $status, $outboundCallCount, $lastTriedAt, $retryDuration, $callFlowId);
+    public function create($maxRetries, $phoneNumber, $status, $outboundCallCount, $lastTriedAt, $callFlowId);
+
 }

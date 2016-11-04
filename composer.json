@@ -11,7 +11,8 @@
         "laravelcollective/html": "5.2.*",
         "doctrine/dbal": "^2.5",
         "guzzlehttp/guzzle": "~6.0",
-        "league/flysystem-aws-s3-v3": "^1.0"
+        "league/flysystem-aws-s3-v3": "^1.0",
+        "nodes/counter-cache": "^1.0"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

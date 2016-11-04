@@ -19,7 +19,6 @@ class CreatePhoneCallsTable extends Migration
             $table->string('status');
             $table->integer('outbound_calls_count');
             $table->dateTime('last_tried_at');
-            $table->integer('retry_duration');
             $table->integer('call_flow_id')->unsigned();
             $table->foreign('call_flow_id')->references('id')->on('call_flows');
             $table->timestamps();

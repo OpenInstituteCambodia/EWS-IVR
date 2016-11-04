@@ -25,18 +25,29 @@ class PhoneCallRepository implements PhoneCallRepositoryInterface
     }
 
 
-    public function create($maxRetries, $phoneNumber, $status, $outboundCallCount, $lastTriedAt, $retryDuration, $callFlowId)
+    /**
+     * Create phone call record
+     * @param $maxRetries
+     * @param $phoneNumber
+     * @param $status
+     * @param $outboundCallCount
+     * @param $lastTriedAt
+     * @param $callFlowId
+     * @internal param $retryDuration
+     * @return phone call id
+     */
+    public function create($maxRetries, $phoneNumber, $status, $outboundCallCount, $lastTriedAt, $callFlowId)
     {
-        $this->phoneCallModel->create(
+        $phoneCall = $this->phoneCallModel->create(
             [
                 'max_retries' => $maxRetries,
                 'phone_number' => $phoneNumber,
                 'status' => $status,
                 'outbound_calls_count' => $outboundCallCount,
                 'last_tried_at' => $lastTriedAt,
-                'retry_duration' => $retryDuration,
                 'call_flow_id' => $callFlowId
             ]
         );
+        return $phoneCall->id;
     }
 }

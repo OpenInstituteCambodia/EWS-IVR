@@ -157,7 +157,8 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\SomlengEWS\Repositories\CallFlows\CallFlowServiceProvider::class,
-        App\SomlengEWS\Repositories\PhoneCalls\PhoneCallServiceProvider::class
+        App\SomlengEWS\Repositories\PhoneCalls\PhoneCallServiceProvider::class,
+        App\SomlengEWS\Repositories\OutboundCalls\OutboundCallServiceProvider::class,
     ],
 
     /*
