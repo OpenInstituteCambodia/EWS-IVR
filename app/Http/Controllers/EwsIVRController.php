@@ -90,7 +90,6 @@ class EwsIVRController extends Controller
     function ivrCalling(Request $request)
     {
         $soundUrl = $request->input('soundUrl');
-        Log::info('Sound URL:' . $soundUrl);
         $response = new Twiml();
         $gather = $response->gather(
             ['numDigits' => '1', 'action' => route('ews-ivr-calling', ['soundUrl' => $soundUrl], false), 'finishOnKey' => '*']
