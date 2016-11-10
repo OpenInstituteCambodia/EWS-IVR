@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\OutboundCall;
 use App\PhoneCall;
 use App\SomlengClient;
+use App\SomlengEWS\Repositories\OutboundCalls\OutboundCallRepository;
 use App\SomlengEWS\Repositories\OutboundCalls\OutboundCallRepositoryInterface;
 use App\SomlengEWS\Repositories\PhoneCalls\PhoneCallRepositoryInterface;
 use Illuminate\Console\Command;
@@ -51,13 +53,11 @@ class MakeOutboundCall extends Command
      */
     public function handle()
     {
+        Log::info($_ENV);
         // Make Call with Twilio API or Somleng API according to ENV set
-        /*$accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+        $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
         $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
-        $number = env(env('VOICE_PLATFORM') . '_NUMBER');*/
-        $accountSid = Config::get('constants.ACCOUNT_SID');
-        $authToken = Config::get('constants.AUTH_TOKEN');
-        $number = Config::get('constants.NUMBER');
+        $number = env(env('VOICE_PLATFORM') . '_NUMBER');
         $client = new SomlengClient($accountSid, $authToken);
         // Find all phone calls records with status failed OR busy OR no_answer and
         // current time minus record modified time > retry_duration
@@ -79,9 +79,9 @@ class MakeOutboundCall extends Command
                     $phoneNumber,
                     $number,
                     array(
-                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath]),
+                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath], false),
                         'StatusCallbackEvent' => ['completed'],
-                        'StatusCallback' => route('ews-call-status-check')
+                        'StatusCallback' => route('ews-call-status-check', [], false)
                     )
                 );
                 // Create call record in outbound_calls table with status queued
