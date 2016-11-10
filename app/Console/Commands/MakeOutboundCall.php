@@ -70,22 +70,24 @@ class MakeOutboundCall extends Command
             })
             ->select(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path'])
             ->get();
-        foreach ($recordsToMakeCall as $phoneCall) {
-            $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
-            $soundFilePath = Config::get('constants.EWS-SOUND-URL') . $phoneCall->sound_file_path;
-            $call = $client->calls->create(
-                $phoneNumber,
-                $number,
-                array(
-                    'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath], false),
-                    'StatusCallbackEvent' => ['completed'],
-                    'StatusCallback' => route('ews-call-status-check', [], false)
-                )
-            );
-            // Create call record in outbound_calls table with status queued
-            $this->outboundCallObject->create($phoneCall->id, $call->sid, 'queued', 0);
-            // Update phone call record status to sent
-            PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'sent']);
+        if (count($recordsToMakeCall) > 0) {
+            foreach ($recordsToMakeCall as $phoneCall) {
+                $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
+                $soundFilePath = Config::get('constants.EWS-SOUND-URL') . $phoneCall->sound_file_path;
+                $call = $client->calls->create(
+                    $phoneNumber,
+                    $number,
+                    array(
+                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath], false),
+                        'StatusCallbackEvent' => ['completed'],
+                        'StatusCallback' => route('ews-call-status-check', [], false)
+                    )
+                );
+                // Create call record in outbound_calls table with status queued
+                $this->outboundCallObject->create($phoneCall->id, $call->sid, 'queued', 0);
+                // Update phone call record status to sent
+                PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'sent']);
+            }
         }
     }
 }
