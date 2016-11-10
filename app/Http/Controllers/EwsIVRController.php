@@ -75,7 +75,7 @@ class EwsIVRController extends Controller
             $filesystem = new Filesystem($adapter);
             $contacts = json_decode($filesystem->read('phone_contacts/' . $phoneContactFileName));
             foreach ($contacts as $contact) {
-                $this->phoneCall->create($numberOfRetry, $contact->phone, 'queued', 0, Carbon::now('Asia/Phnom_Penh')->toDateTimeString(), $retryDifferentTime, $callFlowId);
+                $this->phoneCall->create($numberOfRetry, $contact->phone, 'queued', 0, Carbon::now()->toDateTimeString(), $retryDifferentTime, $callFlowId);
             }
         }
     }
