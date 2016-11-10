@@ -53,6 +53,7 @@ class MakeOutboundCall extends Command
      */
     public function handle()
     {
+        Log::info($_ENV);
         // Make Call with Twilio API or Somleng API according to ENV set
         $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
         $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
