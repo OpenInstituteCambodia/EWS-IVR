@@ -1,1 +1,1 @@
-* * * * * . /opt/elasticbeanstalk/support/envvars; php /var/app/current/artisan schedule:run >> /dev/null 0>&1
+* * * * * root . /opt/elasticbeanstalk/support/envvars; php /var/app/current/artisan schedule:run >> /dev/null 0>&1
