@@ -142,13 +142,13 @@ class EwsIVRController extends Controller
          *  INNER JOIN phone_calls ON outbound_calls.phone_call_id = phone_calls.id
          *  INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
          * WHERE
-         *  outbound_calls.call_sid = '61134fa6-9d59-4692-b8dc-2cb49eaad11e'
+         *  outbound_calls.call_sid = ?
          *
          * */
         $callLogData = $call = DB::table('outbound_calls')
             ->join('phone_calls', 'phone_calls.id', '=', 'outbound_calls.phone_call_id')
             ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
-            ->where('outbound_calls.call_sid', '=', '61134fa6-9d59-4692-b8dc-2cb49eaad11e')
+            ->where('outbound_calls.call_sid', '=', $callSid)
             ->select([
                 'outbound_calls.*',
                 'phone_calls.max_retries',
