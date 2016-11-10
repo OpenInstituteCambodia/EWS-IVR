@@ -11,7 +11,7 @@ return [
     'TWILIO_NUMBER' => env('TWILIO_NUMBER'),
     'DEFAULT_RETRY_CALL' => 3, // max retry is 3 times
     'DEFAULT_RETRY_DIFFERENT_TIME' => 10, // different time for every retry is 10 minutes
-    'EWS-API-TOKEN' => 'ZtMSokqFGpEnXPcVG1gMguouKS1ZyVdZCpk5wYFypsePYQksMGqRdJSQ90Hi',
+    'EWS-API-TOKEN' => 'tYW6Vp4Dez4lQ21a4UOwxMb3UNKeSb6QaCS2IDfA6TKSPpjOGWt2QsM0gCj3',
     'BONG-PHEAK-API_TOKEN' => 'C5hMvKeegj3l4vDhdLpgLChTucL9Xgl8tvtpKEjSdgfP433aNft0kbYlt77h',
     'BONG-PHEAK-STORE_SHARE_RECORD_API' => 'http://bongpheak.com/api/v1/storeSharedRecord',
     'BONG-PHEAK-STORE_APPLY_RECORD_API' => 'http://bongpheak.com/api/v1/storeApplyRecord',

@@ -70,16 +70,16 @@ class MakeOutboundCall extends Command
             })
             ->select(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path'])
             ->get();
-        foreach($recordsToMakeCall as $phoneCall){
+        foreach ($recordsToMakeCall as $phoneCall) {
             $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
             $soundFilePath = Config::get('constants.EWS-SOUND-URL') . $phoneCall->sound_file_path;
             $call = $client->calls->create(
                 $phoneNumber,
                 $number,
                 array(
-                    'url' => 'http://9ad1fdd0.ngrok.io/ewsIVR/ews-ivr-calling?soundUrl=' . $soundFilePath,
+                    'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath], false),
                     'StatusCallbackEvent' => ['completed'],
-                    'StatusCallback' => 'http://9ad1fdd0.ngrok.io/ewsIVR/ews-call-status-check'
+                    'StatusCallback' => route('ews-call-status-check', [], false)
                 )
             );
             // Create call record in outbound_calls table with status queued

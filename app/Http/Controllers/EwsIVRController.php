@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\AwsS3v3\AwsS3Adapter;
@@ -126,51 +127,69 @@ class EwsIVRController extends Controller
             );
         // Update phone call status
         $phoneCallId = OutboundCall::where('call_sid', '=', $callSid)->first()->phoneCall->id;
-        PhoneCall::where('id', '=', $phoneCallId)->update(['status' => $status,'last_tried_at' => Carbon::now('Asia/Phnom_Penh')->toDateTimeString()]);
-        return;
-        /*$retry = $request->input('retry');
-        $status = $request->CallStatus;
-        $duration = $request->CallDuration;
-        $dateTime = Carbon::now('Asia/Phnom_Penh');
-        $phone = substr_replace($request->To, '0', 0, 4);
-        if ($status == 'busy' || $status == 'failed' || $status == 'no-answer' || $status == 'canceled') {
-            $activityId = $request->input('activityId');
-            $maxRetry = $request->input('maxRetry');
-            $retryTime = $request->input('retryTime');
-            $callFlowId = $request->input('callFlowId');
-            $duration = 0;
-            if ($retry < $maxRetry) {
-                QueueCall::create([
-                    'phone' => $phone,
-                    'time' => $dateTime->addMinute($retryTime)->toTimeString(),
-                    'call_flow_id' => $callFlowId,
-                    'retry' => $retry + 1,
-                    'max_retry' => $maxRetry,
-                    'retry_time' => $retryTime,
-                    'activity_id' => $activityId
-                ]);
-                return;
-            }
-        }
-        $activityId = $request->input('activityId');
-        $maxRetry = $request->input('maxRetry');
-        $retryTime = $request->input('retryTime');
-        $callFlowId = $request->input('callFlowId');
-        $callLogFields = [
-            'phone' => $phone,
-            'status' => $status,
-            'duration' => $duration,
-            'time' => $dateTime->toTimeString(),
-            'date' => $dateTime->toDateString(),
-            'retries' => $retry,
-            'project_id' => 1,
-            'call_flow_id' => $callFlowId,
-            'retry_time' => $retryTime,
-            'max_retry' => $maxRetry,
-            'activity_id' => $activityId
+        PhoneCall::where('id', '=', $phoneCallId)->update(['status' => $status, 'last_tried_at' => Carbon::now('Asia/Phnom_Penh')->toDateTimeString()]);
+        /*
+         * Get call information data to inserting to EWS database
+         * Raw SQL
+         * SELECT
+         *  outbound_calls.*, phone_calls.outbound_calls_count,
+         *  phone_calls.phone_number,
+         *  phone_calls.call_flow_id,
+         *  call_flows.project_id,
+         *  call_flows.activity_id
+         * FROM
+         *  outbound_calls
+         *  INNER JOIN phone_calls ON outbound_calls.phone_call_id = phone_calls.id
+         *  INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
+         * WHERE
+         *  outbound_calls.call_sid = '61134fa6-9d59-4692-b8dc-2cb49eaad11e'
+         *
+         * */
+        $callLogData = $call = DB::table('outbound_calls')
+            ->join('phone_calls', 'phone_calls.id', '=', 'outbound_calls.phone_call_id')
+            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
+            ->where('outbound_calls.call_sid', '=', '61134fa6-9d59-4692-b8dc-2cb49eaad11e')
+            ->select([
+                'outbound_calls.*',
+                'phone_calls.max_retries',
+                'phone_calls.outbound_calls_count',
+                'phone_calls.phone_number',
+                'phone_calls.call_flow_id',
+                'call_flows.project_id',
+                'call_flows.activity_id',
+                'call_flows.retry_duration'])
+            ->first();
+
+        $dateTimeArray = explode(' ', $callLogData->updated_at);
+        $date = $dateTimeArray[0];
+        $time = $dateTimeArray[1];
+        $callArrayToInsert = [
+            'phone' => $callLogData->phone_number,
+            'status' => $callLogData->status,
+            'duration' => $callLogData->duration,
+            'time' => $time,
+            'date' => $date,
+            'retries' => $callLogData->outbound_calls_count,
+            'project_id' => $callLogData->project_id,
+            'call_flow_id' => $callLogData->call_flow_id,
+            'retry_time' => $callLogData->retry_duration,
+            'max_retry' => $callLogData->max_retries,
+            'activity_id' => $callLogData->activity_id
         ];
-        CallLog::create($callLogFields);
-        $data = array("api_token" => "ZtMSokqFGpEnXPcVG1gMguouKS1ZyVdZCpk5wYFypsePYQksMGqRdJSQ90Hi", "clog" => json_encode($callLogFields));
+        // Check if status completed and retries time  equal to make retries insert data to EWS database
+        if (($status == 'completed') || ($callLogData->max_retries == $callLogData->outbound_calls_count)) {
+            $this->insertToEWSCallLogDb($callArrayToInsert);
+        }
+        return;
+    }
+
+    /**
+     * Insert call log data to EWS database with EWS API
+     * @param array $callLogRecord
+     */
+    private function insertToEWSCallLogDb($callLogRecord = [])
+    {
+        $data = array("api_token" => Config::get('constants.EWS-API-TOKEN'), "clog" => json_encode($callLogRecord));
         $data_string = json_encode($data);
         $ch = curl_init('http://ews-dashboard-production.ap-southeast-1.elasticbeanstalk.com/api/v1/receivingcalllog');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
@@ -181,6 +200,6 @@ class EwsIVRController extends Controller
                 'Content-Length: ' . strlen($data_string))
         );
         $result = curl_exec($ch);
-        return;*/
+        return;
     }
 }
