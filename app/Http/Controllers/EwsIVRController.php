@@ -58,7 +58,7 @@ class EwsIVRController extends Controller
         // Check if we upload successfully
         if ($uploadedSound == true && $uploadedPhoneContact == true) {
             // Create resource information in CallFlow table
-            $callFlowId = $this->callFlow->create(1, $soundFilename, $phoneContactFileName, $activityId);
+            $callFlowId = $this->callFlow->create(1, $soundFilename, $phoneContactFileName, $activityId, $retryDifferentTime);
 
             // Get content of contacts.json file: phone number
             // For get contents of AWS s3 private file content we must use AWS S3 Client
