@@ -79,9 +79,9 @@ class MakeOutboundCall extends Command
                     $phoneNumber,
                     $number,
                     array(
-                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath], false),
+                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath]),
                         'StatusCallbackEvent' => ['completed'],
-                        'StatusCallback' => route('ews-call-status-check', [], false)
+                        'StatusCallback' => route('ews-call-status-check')
                     )
                 );
                 // Create call record in outbound_calls table with status queued
