@@ -67,7 +67,7 @@ class MakeOutboundCall extends Command
             ->orWhere(function ($query) {
                 $query->where('phone_calls.outbound_calls_count', '<', 3)
                     ->whereIn('phone_calls.status', ['busy', 'no-answer'])
-                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at," . Carbon::now()->toDateTimeString() . ") > call_flows.retry_duration ");
+                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
             })
             ->select(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path'])
             ->get();
