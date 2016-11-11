@@ -38,6 +38,7 @@ class Inspire extends Command
      */
     public function handle(CallFlowRepositoryInterface $callFlow, OutboundCallRepositoryInterface $outboundCall)
     {
+        Log::info("Hello World",[1,23,4,53,645]);
         /*$call = DB::table('phone_calls')
             ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
             ->where('phone_calls.status', '=', 'queued')

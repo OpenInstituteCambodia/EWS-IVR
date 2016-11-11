@@ -2,7 +2,10 @@
 
 namespace App\Http;
 
+use Bootstrap\ConfigureLogging;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Routing\Router;
 
 class Kernel extends HttpKernel
 {
@@ -51,4 +54,19 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'cors' => \App\Http\Middleware\Cors::class
     ];
+
+    /**
+     * Kernel constructor.
+     * @param Application $app
+     * @param Router $router
+     */
+    public function __construct(Application $app, Router $router)
+    {
+        parent::__construct($app, $router);
+        array_walk($this->bootstrappers, function (&$bootstrapper) {
+            if ($bootstrapper === 'Illuminate\Foundation\Bootstrap\ConfigureLogging') {
+                $bootstrapper = 'Bootstrap\ConfigureLogging';
+            }
+        });
+    }
 }
