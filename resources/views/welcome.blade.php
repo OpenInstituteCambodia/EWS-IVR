@@ -13,10 +13,10 @@
     <div class="row">
         <div class="col-md-12">
             {!! Form::open(['url' =>'makeCall','method' =>'POST','v-on:submit.prevent'=>'processData','enctype'=> 'multipart/form-data','files'=>true]) !!}
-            <div class="form-group">
+            {{--<div class="form-group">
                 {!! Form::label('soundFile','Sound file',array('class' => 'control-label')) !!}
                 {!! Form::file('soundFile', array('class'=>'form-control','v-model'=>"sound")) !!}
-            </div>
+            </div>--}}
            {{-- <div class="form-group">
                 {!! Form::label('phoneContactFile','Phone',array('class' => 'control-label')) !!}
                 {!! Form::file('phoneContactFile', array('class' => 'form-control','v-model'=>"phone")) !!}

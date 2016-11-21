@@ -11,5 +11,5 @@ namespace App\SomlengEWS\Repositories\CallFlows;
 
 interface CallFlowRepositoryInterface
 {
-    public function create($projectId, $soundFilePath, $contactFilePath, $activityId, $retryDuration);
+    public function create($projectId, $soundFilePath, $activityId, $retryDuration, $contactFilePath = '');
 }

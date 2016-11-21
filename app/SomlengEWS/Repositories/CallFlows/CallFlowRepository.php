@@ -34,7 +34,7 @@ class CallFlowRepository implements CallFlowRepositoryInterface
      * @param $retryDuration
      * @return mixed
      */
-    public function create($projectId, $soundFilePath, $contactFilePath, $activityId, $retryDuration)
+    public function create($projectId, $soundFilePath, $activityId, $retryDuration, $contactFilePath = '')
     {
         $callFlow = $this->callFlowModel->create(
             [

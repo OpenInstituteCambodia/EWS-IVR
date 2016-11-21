@@ -74,12 +74,11 @@ class MakeOutboundCall extends Command
         if (count($recordsToMakeCall) > 0) {
             foreach ($recordsToMakeCall as $phoneCall) {
                 $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
-                $soundFilePath = Config::get('constants.EWS-SOUND-URL') . $phoneCall->sound_file_path;
                 $call = $client->calls->create(
                     $phoneNumber,
                     $number,
                     array(
-                        'url' => route('ews-ivr-calling', ['soundUrl' => $soundFilePath]),
+                        'url' => route('ews-ivr-calling'),
                         'StatusCallbackEvent' => ['completed'],
                         'StatusCallback' => route('ews-call-status-check')
                     )
