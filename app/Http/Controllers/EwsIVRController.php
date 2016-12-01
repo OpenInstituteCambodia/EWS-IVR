@@ -35,6 +35,7 @@ class EwsIVRController extends Controller
 
     public function processDataUpload(Request $request)
     {
+        Log::info($request);
         $phoneContactJson = $request->input('contacts');
         $activityId = $request->input('activity_id');
         $max_retries = ($request->input('no_of_retry')) ? $request->input('no_of_retry') : Config::get('constants.DEFAULT_RETRY_CALL');
