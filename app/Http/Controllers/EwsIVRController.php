@@ -55,7 +55,7 @@ class EwsIVRController extends Controller
             PhoneCall::create(
                 [
                     'max_retries' => $max_retries,
-                    'phone_number' => $contact->phone,
+                    'phone_number' => preg_replace('/^(\+855|855)/', '0', $contact->phone),
                     'status' => 'queued',
                     'last_tried_at' => Carbon::now()->toDateTimeString(),
                     'call_flow_id' => $callFlowId
