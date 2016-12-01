@@ -35,7 +35,6 @@ class EwsIVRController extends Controller
 
     public function processDataUpload(Request $request)
     {
-        Log::info($request);
         $phoneContactJson = $request->input('contacts');
         $activityId = $request->input('activity_id');
         $max_retries = ($request->input('no_of_retry')) ? $request->input('no_of_retry') : Config::get('constants.DEFAULT_RETRY_CALL');
@@ -52,14 +51,12 @@ class EwsIVRController extends Controller
             ]
         )->id;
         $contacts = json_decode($phoneContactJson);
-        Log::info($contacts);
         foreach ($contacts as $contact) {
             // Create record in phone_calls table with status queued
-            Log::info($contact->phone);
             PhoneCall::create(
                 [
                     'max_retries' => $max_retries,
-                    'phone_number' => preg_replace('/^(\+855|855)/', '0', $contact->phone),
+                    'phone_number' => preg_replace('/^(\s855|855)/', '0', $contact->phone),// phone number with +855( request url encode + sign to space) or 855 must replace with 0
                     'status' => 'queued',
                     'last_tried_at' => Carbon::now()->toDateTimeString(),
                     'call_flow_id' => $callFlowId
