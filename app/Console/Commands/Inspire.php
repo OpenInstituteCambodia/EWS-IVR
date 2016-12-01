@@ -39,8 +39,13 @@ class Inspire extends Command
      */
     public function handle(CallFlowRepositoryInterface $callFlow, OutboundCallRepositoryInterface $outboundCall)
     {
-        $outboundCallObject = OutboundCall::where('call_sid','=','9adc68da-bed1-4531-b657-d4581f15ff49')->first();
-        Log::info($outboundCallObject->phoneCall->callFlow->sound_file_path);
+        $arr = json_decode('[{"phone":"+85517641855"},{"phone":"85586234665"}]');
+        foreach($arr as $row){
+            Log::info(preg_replace('/^(\+855|855)/','0',$row->phone));
+            Log::info($contact->phone);
+        }
+        /*$outboundCallObject = OutboundCall::where('call_sid','=','9adc68da-bed1-4531-b657-d4581f15ff49')->first();
+        Log::info($outboundCallObject->phoneCall->callFlow->sound_file_path);*/
         /*$call = DB::table('phone_calls')
             ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
             ->where('phone_calls.status', '=', 'queued')

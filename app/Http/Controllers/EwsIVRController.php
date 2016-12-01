@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Twilio\Twiml;
 
 class EwsIVRController extends Controller
@@ -50,8 +51,10 @@ class EwsIVRController extends Controller
             ]
         )->id;
         $contacts = json_decode($phoneContactJson);
+        Log::info($contacts);
         foreach ($contacts as $contact) {
             // Create record in phone_calls table with status queued
+            Log::info($contact->phone);
             PhoneCall::create(
                 [
                     'max_retries' => $max_retries,
