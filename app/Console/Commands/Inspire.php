@@ -40,23 +40,22 @@ class Inspire extends Command
      * @return mixed
      */
     public function handle(CallFlowRepositoryInterface $callFlow, OutboundCallRepositoryInterface $outboundCall)
-    { // Make Call with Twilio API or Somleng API according to ENV set
-        /*$accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+    {
+        $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
         $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
         $number = env(env('VOICE_PLATFORM') . '_NUMBER');
         $client = new SomlengClient($accountSid, $authToken);
-        try{
+        try {
             $call = $client->calls->create(
-                '+855121882456',
+                '+85586234665',
                 $number,
                 array(
-                    'url' => route('ews-ivr-calling'),
-                    'StatusCallbackEvent' => ['completed'],
-                    'StatusCallback' => route('ews-call-status-check')
+                    'url' => 'http://demo.twilio.com/docs/voice.xml'
                 )
             );
-        }catch(RestException $e){
-            dump($e->getMessage());
-        }*/
+            Log::info($call->sid);
+        } catch (RestException $e) {
+            Log::info("TEST");
+        }
     }
 }

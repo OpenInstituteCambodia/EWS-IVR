@@ -40,7 +40,7 @@ class ConfigureLogging extends BaseConfigureLogging
     {
         parent::configureSyslogHandler($app, $log);
         // Stream Handler
-        $logPath = '/var/log/applications/someng-ews/app.log';
+        $logPath = '/var/log/applications/somleng-ews/app.log';
         $logLevel = Monolog::DEBUG;
         $logStreamHandler = new StreamHandler($logPath, $logLevel);
 
