@@ -62,16 +62,47 @@ class MakeOutboundCall extends Command
         $client = new SomlengClient($accountSid, $authToken);
         // Find all phone calls records with status failed OR busy OR no_answer and
         // current time minus record modified time > retry_duration
-        $recordsToMakeCall = PhoneCall::where('phone_calls.status', 'queued')
-            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
-            ->orWhere(function ($query) {
-                $query->where('phone_calls.outbound_calls_count', '<', 'phone_calls.max_retries')
-                    ->whereIn('phone_calls.status', ['busy', 'no-answer'])
-                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
-            })
-            ->get(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path']);
+//        $recordsToMakeCall = PhoneCall::where('phone_calls.status', 'queued')
+//            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
+//            ->orWhere(function ($query) {
+//                $query->where('phone_calls.outbound_calls_count', '<', 'phone_calls.max_retries')
+//                    ->whereIn('phone_calls.status', ['busy', 'no-answer'])
+//                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
+//            })
+//            ->get(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path']);
+        $sql = <<<EOT
+                SELECT
+                    phone_calls.id,
+                    phone_calls.phone_number,
+                    call_flows.sound_file_path
+                FROM
+                    phone_calls
+                INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
+                WHERE
+                    phone_calls. STATUS = 'queued'
+                OR (
+                    (
+                        phone_calls.outbound_calls_count < phone_calls.max_retries
+                    )
+                    AND (
+                        phone_calls.status IN ('busy', 'no-answer')
+                    )
+                    AND TIMESTAMPDIFF(
+                        MINUTE,
+                        phone_calls.updated_at,
+                        ?
+                    ) > call_flows.retry_duration
+                );
+EOT;
+
+        $recordsToMakeCall = DB::select($sql, [Carbon::now()->toDateTimeString()]);
+        $count = 0;
         if (count($recordsToMakeCall) > 0) {
             foreach ($recordsToMakeCall as $phoneCall) {
+                if ($count == 1) {
+                    break;
+                }
+                $count++;
                 $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
                 try {
                     $call = $client->calls->create(
@@ -86,11 +117,10 @@ class MakeOutboundCall extends Command
                     // Create call record in outbound_calls table with status queued
                     $this->outboundCallObject->create($phoneCall->id, $call->sid, 'queued', 0);
                     // Update phone call record status to sent
-                    $phoneCall->status = 'sent';
-                    $phoneCall->save();
+                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'sent']);
                 } catch (RestException $e) {
-                    $phoneCall->status = 'error';
-                    $phoneCall->save();
+                    // Update phone call record status to error
+                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error']);
                 }
             }
         }
