@@ -61,36 +61,39 @@ class MakeOutboundCall extends Command
         $number = env(env('VOICE_PLATFORM') . '_NUMBER');
         $client = new SomlengClient($accountSid, $authToken);
         // Find all phone calls records with status failed OR busy OR no_answer and
-        // current time minus record modified time > retry_duration
-//        $recordsToMakeCall = PhoneCall::where('phone_calls.status', 'queued')
-//            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
-//            ->orWhere(function ($query) {
-//                $query->where('phone_calls.outbound_calls_count', '<', 'phone_calls.max_retries')
-//                    ->whereIn('phone_calls.status', ['busy', 'no-answer'])
-//                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
-//            })
-//            ->get(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path']);
         $sql = <<<EOT
                 SELECT
-                    phone_calls.id,
-                    phone_calls.phone_number,
-                    call_flows.sound_file_path
+                phone_calls.*
                 FROM
                     phone_calls
                 INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
                 WHERE
                     phone_calls. STATUS = 'queued'
                 OR (
-                    (
-                        phone_calls.outbound_calls_count < phone_calls.max_retries
+                    (phone_calls. STATUS = 'error')
+                    AND (
+                        phone_calls.platform_http_status_code LIKE '5%'
                     )
                     AND (
-                        phone_calls.status IN ('busy', 'no-answer')
+                        phone_calls.outbound_calls_count < phone_calls.max_retries
                     )
                     AND TIMESTAMPDIFF(
                         MINUTE,
                         phone_calls.updated_at,
-                        ?
+                        NOW()
+                    ) > call_flows.retry_duration
+                )
+                OR (
+                    (
+                        phone_calls.outbound_calls_count < phone_calls.max_retries
+                    )
+                    AND (
+                        phone_calls. STATUS IN ('busy', 'no-answer')
+                    )
+                    AND TIMESTAMPDIFF(
+                        MINUTE,
+                        phone_calls.updated_at,
+                        NOW()
                     ) > call_flows.retry_duration
                 );
 EOT;
@@ -119,8 +122,10 @@ EOT;
                     // Update phone call record status to sent
                     PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'sent']);
                 } catch (RestException $e) {
+                    // Create a record in outbound_calls table with status error
+                    $this->outboundCallObject->create($phoneCall->id, '', 'error', 0);
                     // Update phone call record status to error
-                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error']);
+                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error','platform_http_status_code' => $e->getCode()]);
                 }
             }
         }
