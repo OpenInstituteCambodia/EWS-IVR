@@ -65,7 +65,7 @@ class MakeOutboundCall extends Command
         $recordsToMakeCall = PhoneCall::where('phone_calls.status', 'queued')
             ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
             ->orWhere(function ($query) {
-                $query->where('phone_calls.outbound_calls_count', '<', 3)
+                $query->where('phone_calls.outbound_calls_count', '<', 'phone_calls.max_retries')
                     ->whereIn('phone_calls.status', ['busy', 'no-answer'])
                     ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
             })
