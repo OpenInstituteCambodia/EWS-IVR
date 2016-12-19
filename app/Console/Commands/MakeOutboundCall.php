@@ -93,19 +93,14 @@ class MakeOutboundCall extends Command
                     AND TIMESTAMPDIFF(
                         MINUTE,
                         phone_calls.updated_at,
-                        NOW()
+                        ?
                     ) > call_flows.retry_duration
                 );
 EOT;
 
         $recordsToMakeCall = DB::select($sql, [Carbon::now()->toDateTimeString()]);
-        $count = 0;
         if (count($recordsToMakeCall) > 0) {
             foreach ($recordsToMakeCall as $phoneCall) {
-                if ($count == 1) {
-                    break;
-                }
-                $count++;
                 $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
                 try {
                     $call = $client->calls->create(
