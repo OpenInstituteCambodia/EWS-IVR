@@ -2,4 +2,5 @@
 
 set -xe
 
-chmod 0777 /var/app/current/storage/logs
+touch /var/app/current/storage/logs/laravel.log
+chmod -R 0777 /var/app/current/storage/logs
