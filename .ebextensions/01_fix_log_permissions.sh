@@ -3,4 +3,5 @@
 set -xe
 
 touch /var/app/current/storage/logs/laravel.log
-chmod -R 0777 /var/app/current/storage/logs
+chown webapp:webapp /var/app/current/storage/logs/laravel.log
+chmod 0666 /var/app/current/storage/logs/laravel.log
