@@ -60,6 +60,10 @@ class MakeOutboundCall extends Command
         $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
         $number = env(env('VOICE_PLATFORM') . '_NUMBER');
         $client = new SomlengClient($accountSid, $authToken);
+        // Count phone calls are still active(status is sent)
+        $activeCalls = PhoneCall::where('status', '=', 'sent')->count();
+        // number record to be called
+        $numberOfRecordTobeCalled = env('MAX_SIMULTANEOUS_CALLS') - $activeCalls;
         // Find all phone calls records with status failed OR busy OR no_answer and
         $sql = <<<EOT
                 SELECT
@@ -80,7 +84,7 @@ class MakeOutboundCall extends Command
                     AND TIMESTAMPDIFF(
                         MINUTE,
                         phone_calls.updated_at,
-                        NOW()
+                        ?
                     ) > call_flows.retry_duration
                 )
                 OR (
@@ -95,10 +99,10 @@ class MakeOutboundCall extends Command
                         phone_calls.updated_at,
                         ?
                     ) > call_flows.retry_duration
-                );
+                ) LIMIT ?;
 EOT;
 
-        $recordsToMakeCall = DB::select($sql, [Carbon::now()->toDateTimeString()]);
+        $recordsToMakeCall = DB::select($sql, [Carbon::now()->toDateTimeString(), Carbon::now()->toDateTimeString(), $numberOfRecordTobeCalled]);
         if (count($recordsToMakeCall) > 0) {
             foreach ($recordsToMakeCall as $phoneCall) {
                 $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
@@ -120,7 +124,7 @@ EOT;
                     // Create a record in outbound_calls table with status error
                     $this->outboundCallObject->create($phoneCall->id, '', 'error', 0);
                     // Update phone call record status to error
-                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error','platform_http_status_code' => $e->getCode()]);
+                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error', 'platform_http_status_code' => $e->getCode()]);
                 }
             }
         }

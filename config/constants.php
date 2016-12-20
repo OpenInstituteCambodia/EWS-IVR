@@ -17,4 +17,6 @@ return [
     'BONG-PHEAK-STORE_APPLY_RECORD_API' => 'http://bongpheak.com/api/v1/storeApplyRecord',
     'EWS-SOUND-URL' => 'https://s3-ap-southeast-1.amazonaws.com/twilio-ews-resources/sounds/',
     'EWS-CONTACT-URL' => 'https://s3-ap-southeast-1.amazonaws.com/twilio-ews-resources/phone_contacts/',
+    'HOUR_TO_CLEAR_SENT_CALLS' => 12
+
 ];

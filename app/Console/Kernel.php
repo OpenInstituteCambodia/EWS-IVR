@@ -16,7 +16,8 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\Inspire::class,
-        Commands\MakeOutboundCall::class
+        Commands\MakeOutboundCall::class,
+        Commands\UpdateNoSeccessSentCall::class
     ];
 
     /**
@@ -42,8 +43,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')
-        //          ->hourly();
         $schedule->command('make:call')->everyMinute();
+        $schedule->command('update:sent_record')->everyMinute();
     }
 }
