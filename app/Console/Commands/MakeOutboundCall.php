@@ -67,7 +67,7 @@ class MakeOutboundCall extends Command
         // Count phone calls are still active(status is sent)
         $activeCalls = PhoneCall::where('status', '=', 'sent')->count();
         // number record to be called
-        $numberOfRecordTobeCalled = env('MAX_SIMULTANEOUS_CALLS') - $activeCalls;
+        $numberOfRecordTobeCalled = (int)env('MAX_SIMULTANEOUS_CALLS') - $activeCalls;
         // Find all phone calls records with status failed OR busy OR no_answer and
         $sql = <<<EOT
                 SELECT
