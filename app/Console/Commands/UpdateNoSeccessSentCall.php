@@ -41,7 +41,7 @@ class UpdateNoSeccessSentCall extends Command
      */
     public function handle()
     {
-        // Update all queued calls that sent last 12 hours agon
+        // Update all queued calls that sent last 12 hours ago
         PhoneCall::where('status', 'sent')
             ->whereRaw('TIMESTAMPDIFF(HOUR,phone_calls.updated_at,?) >= ?', [Carbon::now()->toDateTimeString(), config('constants.HOUR_TO_CLEAR_SENT_CALLS')])
             ->update(['status' => 'failed']);
