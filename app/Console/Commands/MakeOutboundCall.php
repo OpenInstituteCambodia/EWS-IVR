@@ -33,6 +33,10 @@ class MakeOutboundCall extends Command
 
     protected $phoneCallObject;
     protected $outboundCallObject;
+    protected $accountSid;
+    protected $authToken;
+    protected $number;
+    protected $client;
 
     /**
      * Create a new command instance.
@@ -46,6 +50,11 @@ class MakeOutboundCall extends Command
         parent::__construct();
         $this->phoneCallObject = $phoneCallObject;
         $this->outboundCallObject = $outboundCallObject;
+        // Make Call with Twilio API or Somleng API according to ENV set
+        $this->accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
+        $this->authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
+        $this->number = env(env('VOICE_PLATFORM') . '_NUMBER');
+        $this->client = new SomlengClient($this->accountSid, $this->authToken);
     }
 
     /**
@@ -55,29 +64,30 @@ class MakeOutboundCall extends Command
      */
     public function handle()
     {
-        // Make Call with Twilio API or Somleng API according to ENV set
-        $accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
-        $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
-        $number = env(env('VOICE_PLATFORM') . '_NUMBER');
-        $client = new SomlengClient($accountSid, $authToken);
-        // Update all queued calls that sent last 12 hours ago
-        PhoneCall::where('status', 'sent')
-            ->whereRaw('TIMESTAMPDIFF(HOUR,phone_calls.updated_at,?) >= ?', [Carbon::now()->toDateTimeString(), config('constants.HOUR_TO_CLEAR_SENT_CALLS')])
-            ->update(['status' => 'failed']);
         // Count phone calls are still active(status is sent)
         $activeCalls = PhoneCall::where('status', '=', 'sent')->count();
         // number record to be called
         $numberOfRecordTobeCalled = (int)env('MAX_SIMULTANEOUS_CALLS') - $activeCalls;
-        // Find all phone calls records with status failed OR busy OR no_answer and
-        $sql = <<<EOT
+        // Get record with status queued to make call first
+        $queuedRecords = PhoneCall::where('status', '=', 'queued')->limit($numberOfRecordTobeCalled)->get();
+        // check if we enough queued record to be called
+        if (count($queuedRecords) == $numberOfRecordTobeCalled) {
+            foreach ($queuedRecords as $row) {
+                // make call to each queued records
+                $phoneNumber = substr_replace($row->phone_number, '+855', 0, 1);
+                $this->makeCall($phoneNumber, $row->id);
+            }
+        } else { // don't have queued record or not have enough to be called
+            // query record that need to retry call
+            $numberOfRecordToBeRetry = $numberOfRecordTobeCalled - count($queuedRecords);
+            $sql = <<<EOT
                 SELECT
                 phone_calls.*
                 FROM
                     phone_calls
                 INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
                 WHERE
-                    phone_calls. STATUS = 'queued'
-                OR (
+                (
                     (phone_calls. STATUS = 'error')
                     AND (
                         phone_calls.platform_http_status_code LIKE '5%'
@@ -105,32 +115,41 @@ class MakeOutboundCall extends Command
                     ) > call_flows.retry_duration
                 ) LIMIT ?;
 EOT;
-
-        $recordsToMakeCall = DB::select($sql, [Carbon::now()->toDateTimeString(), Carbon::now()->toDateTimeString(), $numberOfRecordTobeCalled]);
-        if (count($recordsToMakeCall) > 0) {
-            foreach ($recordsToMakeCall as $phoneCall) {
-                $phoneNumber = substr_replace($phoneCall->phone_number, '+855', 0, 1);
-                try {
-                    $call = $client->calls->create(
-                        $phoneNumber,
-                        $number,
-                        array(
-                            'url' => route('ews-ivr-calling'),
-                            'StatusCallbackEvent' => ['completed'],
-                            'StatusCallback' => route('ews-call-status-check')
-                        )
-                    );
-                    // Create call record in outbound_calls table with status queued
-                    $this->outboundCallObject->create($phoneCall->id, $call->sid, 'queued', 0);
-                    // Update phone call record status to sent
-                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'sent']);
-                } catch (RestException $e) {
-                    // Create a record in outbound_calls table with status error
-                    $this->outboundCallObject->create($phoneCall->id, '', 'error', 0);
-                    // Update phone call record status to error
-                    PhoneCall::where('id', '=', $phoneCall->id)->update(['status' => 'error', 'platform_http_status_code' => $e->getCode()]);
-                }
+            $retryRecords = DB::select($sql, [Carbon::now()->toDateTimeString(), Carbon::now()->toDateTimeString(), $numberOfRecordToBeRetry]);
+            $queuedAndRetryRecords = array_merge(json_decode(json_encode($queuedRecords)), $retryRecords);
+            // retry each record to be retried
+            foreach ($queuedAndRetryRecords as $row) {
+                $phoneNumber = substr_replace($row->phone_number, '+855', 0, 1);
+                $this->makeCall($phoneNumber, $row->id);
             }
+        }
+    }
+
+    /**
+     * @param $phoneNumber
+     * @param $phoneCallId
+     */
+    private function makeCall($phoneNumber, $phoneCallId)
+    {
+        try {
+            $call = $this->client->calls->create(
+                $phoneNumber,
+                $this->number,
+                array(
+                    'url' => route('ews-ivr-calling'),
+                    'StatusCallbackEvent' => ['completed'],
+                    'StatusCallback' => route('ews-call-status-check')
+                )
+            );
+            // Create call record in outbound_calls table with status queued
+            $this->outboundCallObject->create($phoneCallId, $call->sid, 'queued', 0);
+            // Update phone call record status to sent
+            PhoneCall::where('id', '=', $phoneCallId)->update(['status' => 'sent']);
+        } catch (RestException $e) {
+            // Create a record in outbound_calls table with status error
+            $this->outboundCallObject->create($phoneCallId, '', 'error', 0);
+            // Update phone call record status to error
+            PhoneCall::where('id', '=', $phoneCallId)->update(['status' => 'error', 'platform_http_status_code' => $e->getCode()]);
         }
     }
 }

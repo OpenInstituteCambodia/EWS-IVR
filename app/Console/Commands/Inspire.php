@@ -9,6 +9,7 @@ use App\SomlengClient;
 use App\SomlengEWS\Repositories\CallFlows\CallFlowRepositoryInterface;
 use App\SomlengEWS\Repositories\OutboundCalls\OutboundCallRepositoryInterface;
 use App\User;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Config;
@@ -41,31 +42,64 @@ class Inspire extends Command
      */
     public function handle(CallFlowRepositoryInterface $callFlow, OutboundCallRepositoryInterface $outboundCall)
     {
-        /*$accountSid = env(env('VOICE_PLATFORM') . '_ACCOUNT_SID');
-        $authToken = env(env('VOICE_PLATFORM') . '_AUTH_TOKEN');
-        $number = env(env('VOICE_PLATFORM') . '_NUMBER');
-        $client = new SomlengClient($accountSid, $authToken);
-        try {
-            $call = $client->calls->create(
-                '+85586234665',
-                $number,
-                array(
-                    'url' => 'http://demo.twilio.com/docs/voice.xml'
+        // Count phone calls are still active(status is sent)
+        $activeCalls = PhoneCall::where('status', '=', 'sent')->count();
+        // number record to be called
+        $numberOfRecordTobeCalled = (int)env('MAX_SIMULTANEOUS_CALLS') - $activeCalls;
+        // Get record with status queued to make call first
+        $queuedRecords = PhoneCall::where('status', '=', 'queued')->limit($numberOfRecordTobeCalled)->get();
+        // check if we enough queued record to be called
+        if (count($queuedRecords) == $numberOfRecordTobeCalled) {
+            /*foreach ($queuedRecords as $row) {
+                // make call to each record
+            }*/
+        } else { // don't have queued record or not have enough to be called
+            // query record that need to retry call
+            $numberOfRecordToBeRetry = $numberOfRecordTobeCalled - count($queuedRecords);
+            $sql = <<<EOT
+                SELECT
+                phone_calls.*
+                FROM
+                    phone_calls
+                INNER JOIN call_flows ON call_flows.id = phone_calls.call_flow_id
+                WHERE
+                (
+                    (phone_calls. STATUS = 'error')
+                    AND (
+                        phone_calls.platform_http_status_code LIKE '5%'
+                    )
+                    AND (
+                        phone_calls.outbound_calls_count < phone_calls.max_retries
+                    )
+                    AND TIMESTAMPDIFF(
+                        MINUTE,
+                        phone_calls.updated_at,
+                        ?
+                    ) > call_flows.retry_duration
                 )
-            );
-            Log::info($call->sid);
-        } catch (RestException $e) {
-            Log::info("TEST");
-        }*/
-        $recordsToMakeCall = PhoneCall::where('phone_calls.status', 'queued')
-            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
-            ->orWhere(function ($query) {
-                $query->where('phone_calls.outbound_calls_count', '<', 'phone_calls.max_retries')
-                    ->whereIn('phone_calls.status', ['busy', 'no-answer'])
-                    ->whereRaw("TIMESTAMPDIFF(MINUTE,phone_calls.last_tried_at,'" . Carbon::now()->toDateTimeString() . "') > call_flows.retry_duration ");
-            })
-            ->get(['phone_calls.id', 'phone_calls.phone_number', 'call_flows.sound_file_path']);
-
-        Log::info();
+                OR (
+                    (
+                        phone_calls.outbound_calls_count < phone_calls.max_retries
+                    )
+                    AND (
+                        phone_calls. STATUS IN ('busy', 'no-answer')
+                    )
+                    AND TIMESTAMPDIFF(
+                        MINUTE,
+                        phone_calls.updated_at,
+                        ?
+                    ) > call_flows.retry_duration
+                ) LIMIT ?;
+EOT;
+            $retryRecords = DB::select($sql, [Carbon::now()->toDateTimeString(), Carbon::now()->toDateTimeString(), $numberOfRecordToBeRetry]);
+            $arrayMerge = array_merge(json_decode(json_encode($queuedRecords)), $retryRecords);
+            // retry each record to be retried
+            $i = 0;
+            foreach ($arrayMerge as $row) {
+                $i++;
+                Log::info($row->phone_number);
+                Log::info($i);
+            }
+        }
     }
 }
