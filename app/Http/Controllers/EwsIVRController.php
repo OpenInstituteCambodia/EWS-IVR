@@ -131,7 +131,7 @@ class EwsIVRController extends Controller
          *  outbound_calls.call_sid = ?
          *
          * */
-        $callLogData = $call = DB::table('outbound_calls')
+        $callLogData = DB::table('outbound_calls')
             ->join('phone_calls', 'phone_calls.id', '=', 'outbound_calls.phone_call_id')
             ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
             ->where('outbound_calls.call_sid', '=', $callSid)
@@ -163,8 +163,12 @@ class EwsIVRController extends Controller
             'activity_id' => $callLogData->activity_id
         ];
         // Check if status completed and retries time  equal to make retries insert data to EWS database
-        if (($status == 'completed') || ($callLogData->max_retries == $callLogData->outbound_calls_count)) {
+        if (($status == 'completed') || $status == 'failed') {
             $this->insertToEWSCallLogDb($callArrayToInsert);
+        } else {
+            if (($callLogData->max_retries == $callLogData->outbound_calls_count)) {
+                $this->insertToEWSCallLogDb($callArrayToInsert);
+            }
         }
         return;
     }

@@ -150,6 +150,48 @@ EOT;
             $this->outboundCallObject->create($phoneCallId, '', 'error', 0);
             // Update phone call record status to error
             PhoneCall::where('id', '=', $phoneCallId)->update(['status' => 'error', 'platform_http_status_code' => $e->getCode()]);
+            // check if invalid number with status 4xx insert data to ews call log
+            if (preg_match('/^(4)/', $e->getCode())) {
+                $callLogData = PhoneCall::where('id', '=', $phoneCallId)->first();
+                $dateTimeArray = explode(' ', $callLogData->updated_at);
+                $date = $dateTimeArray[0];
+                $time = $dateTimeArray[1];
+                $arrayToInsertToEWS = [
+                    'phone' => $callLogData->phone_number,
+                    'status' => $callLogData->status,
+                    'duration' => 0,
+                    'time' => $time,
+                    'date' => $date,
+                    'retries' => 0,
+                    'project_id' => $callLogData->callFlow->project_id,
+                    'call_flow_id' => $callLogData->call_flow_id,
+                    'retry_time' => $callLogData->callFlow->retry_duration,
+                    'max_retry' => $callLogData->max_retries,
+                    'activity_id' => $callLogData->callFlow->activity_id
+                ];
+                $this->insertToEWSCallLogDb($arrayToInsertToEWS);
+                // Call other queued status immediately
+            }
         }
+    }
+
+    /**
+     * Insert call log data to EWS database with EWS API
+     * @param array $callLogRecord
+     */
+    private function insertToEWSCallLogDb($callLogRecord = [])
+    {
+        $data = array("api_token" => Config::get('constants.EWS-API-TOKEN'), "clog" => json_encode($callLogRecord));
+        $data_string = json_encode($data);
+        $ch = curl_init('http://ews-dashboard-production.ap-southeast-1.elasticbeanstalk.com/api/v1/receivingcalllog');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data_string))
+        );
+        $result = curl_exec($ch);
+        return;
     }
 }
