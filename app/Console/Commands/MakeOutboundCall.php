@@ -150,27 +150,32 @@ EOT;
             $this->outboundCallObject->create($phoneCallId, '', 'error', 0);
             // Update phone call record status to error
             PhoneCall::where('id', '=', $phoneCallId)->update(['status' => 'error', 'platform_http_status_code' => $e->getCode()]);
+            $callLogData = PhoneCall::where('id', '=', $phoneCallId)->first();
+            $dateTimeArray = explode(' ', $callLogData->updated_at);
+            $date = $dateTimeArray[0];
+            $time = $dateTimeArray[1];
+            $arrayToInsertToEWS = [
+                'phone' => $callLogData->phone_number,
+                'status' => $callLogData->status,
+                'duration' => 0,
+                'time' => $time,
+                'date' => $date,
+                'retries' => 0,
+                'project_id' => $callLogData->callFlow->project_id,
+                'call_flow_id' => $callLogData->call_flow_id,
+                'retry_time' => $callLogData->callFlow->retry_duration,
+                'max_retry' => $callLogData->max_retries,
+                'activity_id' => $callLogData->callFlow->activity_id
+            ];
             // check if invalid number with status 4xx insert data to ews call log
             if (preg_match('/^(4)/', $e->getCode())) {
-                $callLogData = PhoneCall::where('id', '=', $phoneCallId)->first();
-                $dateTimeArray = explode(' ', $callLogData->updated_at);
-                $date = $dateTimeArray[0];
-                $time = $dateTimeArray[1];
-                $arrayToInsertToEWS = [
-                    'phone' => $callLogData->phone_number,
-                    'status' => $callLogData->status,
-                    'duration' => 0,
-                    'time' => $time,
-                    'date' => $date,
-                    'retries' => 0,
-                    'project_id' => $callLogData->callFlow->project_id,
-                    'call_flow_id' => $callLogData->call_flow_id,
-                    'retry_time' => $callLogData->callFlow->retry_duration,
-                    'max_retry' => $callLogData->max_retries,
-                    'activity_id' => $callLogData->callFlow->activity_id
-                ];
                 $this->insertToEWSCallLogDb($arrayToInsertToEWS);
                 // Call other queued status immediately
+            }
+            if (preg_match('/^(5)/', $e->getCode())) {
+                if ($callLogData->max_retries == $callLogData->outbound_calls_count) {
+                    $this->insertToEWSCallLogDb($arrayToInsertToEWS);
+                }
             }
         }
     }

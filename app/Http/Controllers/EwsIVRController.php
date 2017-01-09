@@ -113,7 +113,7 @@ class EwsIVRController extends Controller
             );
         // Update phone call status
         $phoneCallId = OutboundCall::where('call_sid', '=', $callSid)->first()->phoneCall->id;
-        PhoneCall::where('id', '=', $phoneCallId)->update(['status' => $status, 'last_tried_at' => Carbon::now('Asia/Phnom_Penh')->toDateTimeString()]);
+        PhoneCall::where('id', '=', $phoneCallId)->update(['status' => $status, 'last_tried_at' => Carbon::now('Asia/Phnom_Penh')->toDateTimeString(), 'platform_http_status_code' => '']);
         /*
          * Get call information data to inserting to EWS database
          * Raw SQL
