@@ -63,7 +63,7 @@ class EwsIVRController extends Controller
                 ]
             );
         }
-        return response(200);
+        return response('success', 200);
     }
 
     /**
