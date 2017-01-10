@@ -43,7 +43,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('make:call')->everyMinute();
-        $schedule->command('update:sent_record')->everyMinute();
+        /*$schedule->command('make:call')->everyMinute();
+        $schedule->command('update:sent_record')->everyMinute();*/
     }
 }
