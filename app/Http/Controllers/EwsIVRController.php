@@ -63,6 +63,7 @@ class EwsIVRController extends Controller
                 ]
             );
         }
+        return response(200);
     }
 
     /**
@@ -163,12 +164,17 @@ class EwsIVRController extends Controller
             'activity_id' => $callLogData->activity_id
         ];
         // Check if status completed and retries time  equal to make retries insert data to EWS database
-        if (($status == 'completed') || $status == 'failed') {
-            $this->insertToEWSCallLogDb($callArrayToInsert);
-        } else {
-            if (($callLogData->max_retries == $callLogData->outbound_calls_count)) {
+        switch ($status) {
+            case 'completed':
                 $this->insertToEWSCallLogDb($callArrayToInsert);
-            }
+                break;
+            case 'failed':
+                $this->insertToEWSCallLogDb($callArrayToInsert);
+                break;
+            default:
+                if ($callLogData->outbound_calls_count == $callLogData->max_retries) {
+                    $this->insertToEWSCallLogDb($callArrayToInsert);
+                }
         }
         return;
     }

@@ -101,7 +101,22 @@ class Inspire extends Command
 //                Log::info($i);
 //            }
 //        }
-        $callLog = PhoneCall::where('id',345)->first();
-        Log::info($callLog->callFlow->project_id);
+        $callLogData = DB::table('outbound_calls')
+            ->join('phone_calls', 'phone_calls.id', '=', 'outbound_calls.phone_call_id')
+            ->join('call_flows', 'call_flows.id', '=', 'phone_calls.call_flow_id')
+            ->where('outbound_calls.call_sid', '=', 'bd8ad889-b1b2-4c1a-8795-897a1325fd80')
+            ->select([
+                'outbound_calls.*',
+                'phone_calls.max_retries',
+                'phone_calls.outbound_calls_count',
+                'phone_calls.phone_number',
+                'phone_calls.call_flow_id',
+                'call_flows.project_id',
+                'call_flows.activity_id',
+                'call_flows.retry_duration'])
+            ->first();
+
+            Log::info(DB::select($sql));
+            Log::info($callLogData->max_retries);
     }
 }
